@@ -166,8 +166,8 @@ class Tetris:
         self.display_surf = pg.display.set_mode((self.window_w, self.window_h))
         self.basic_font = pg.font.SysFont('arial', 20)
         self.big_font = pg.font.SysFont('verdana', 45)
-        pg.display.set_caption('Тетрис Lite')
-        self.show_text('Тетрис Lite')
+        pg.display.set_caption('Тетрис')
+        self.show_text('Тетрис')
         self.block = block
         self.cup_w, self.cup_h = cup_w, cup_h
         self.fig_w, self.fig_h = fig_w, fig_h
@@ -493,8 +493,8 @@ class Tetris:
         self.display_surf = pg.display.set_mode((self.window_w, self.window_h))
         self.basic_font = pg.font.SysFont('arial', 20)
         self.big_font = pg.font.SysFont('verdana', 45)
-        pg.display.set_caption('Тетрис Lite')
-        self.show_text('Тетрис Lite')
+        pg.display.set_caption('Тетрис')
+        self.show_text('Тетрис')
         while True:
             self.run_tetris()
             self.show_pause_screen()
