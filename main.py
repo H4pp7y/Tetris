@@ -236,6 +236,7 @@ class Tetris:
         self.falling_fig = self.get_new_fig()
         self.next_fig = self.get_new_fig()
         self.paused = False
+        self.display_surf.fill((30, 30, 255, 127), special_flags=pg.BLEND_RGBA_MULT)
     paused = False
 
     def run_tetris(self):
@@ -250,6 +251,7 @@ class Tetris:
                     self.points = 0
                     self.level, self.fall_speed = self.calc_speed(self.points)
                     self.falling_fig = self.get_new_fig()
+                    self.display_surf.fill((self.bg_color[0], self.bg_color[1], 255, 127), special_flags=pg.BLEND_RGBA_MULT)
                     self.show_text('Игра закончилась')
                     self.reset_game()
 
