@@ -38,6 +38,7 @@ class Tetris:
         self.window_w, self.window_h = window_w, window_h
         self.fps = 25
         self.sound = pygame.mixer.Sound("Sounds/bgMusic.mp3")
+        self.sound_flash = pygame.mixer.Sound("Sounds/lineFlash.mp3")
         self.last_move_down = time.time()
         self.last_side_move = time.time()
         self.last_fall = time.time()
@@ -169,7 +170,6 @@ class Tetris:
         self.basic_font = pg.font.SysFont('calibri', 20)
         self.big_font = pg.font.SysFont('calibri', 45)
         pg.display.set_caption('Тетрис')
-        self.show_text('Тетрис')
         self.block = block
         self.cup_w, self.cup_h = cup_w, cup_h
         self.fig_w, self.fig_h = fig_w, fig_h
@@ -190,7 +190,9 @@ class Tetris:
         self.falling_fig = self.get_new_fig()
         self.next_fig = self.get_new_fig()
         self.high_score = self.load_high_score()
-
+        self.title_color = (0, 255, 127)
+        self.info_color = (0, 255, 255)
+        self.txt_color = (255, 255, 255)
     high_score = 0
     high_score_file = "high_score.txt"
 
@@ -206,8 +208,6 @@ class Tetris:
     def pg_init(self):
         pg.init()
         mixer.init()
-
-
 
     def show_pause_screen(self):
         self.display_surf.blit(self.pause_screen, (0, 0))
@@ -238,7 +238,6 @@ class Tetris:
         pg.quit()
         sys.exit()
 
-
     def reset_game(self):
         self.falling_fig = None
         self.points = 0
@@ -249,6 +248,7 @@ class Tetris:
         self.paused = False
         self.display_surf.fill((30, 30, 255, 127), special_flags=pg.BLEND_RGBA_MULT)
         self.high_score = self.load_high_score()  # Load the high score
+
     paused = False
 
     def run_tetris(self):
@@ -264,7 +264,8 @@ class Tetris:
                     self.points = 0
                     self.level, self.fall_speed = self.calc_speed(self.points)
                     self.falling_fig = self.get_new_fig()
-                    self.display_surf.fill((self.bg_color[0], self.bg_color[1], 255, 127), special_flags=pg.BLEND_RGBA_MULT)
+                    self.display_surf.fill((self.bg_color[0], self.bg_color[1], 255, 127),
+                                           special_flags=pg.BLEND_RGBA_MULT)
                     self.show_text('Игра закончилась')
                     self.reset_game()
 
@@ -510,17 +511,17 @@ class Tetris:
 
         pauseb_surf = info_font.render('Пауза: пробел', True, self.info_color)
         pauseb_rect = pauseb_surf.get_rect()
-        pauseb_rect.topleft = (self.window_w - 550, 420)
+        pauseb_rect.topleft = (self.window_w - 550, 400)
         self.display_surf.blit(pauseb_surf, pauseb_rect)
 
         escb_surf = info_font.render('Выход: Esc', True, self.info_color)
         escb_rect = escb_surf.get_rect()
-        escb_rect.topleft = (self.window_w - 550, 450)
+        escb_rect.topleft = (self.window_w - 550, 430)
         self.display_surf.blit(escb_surf, escb_rect)
 
         restart_surf = info_font.render('Перезапуск: R', True, self.info_color)
         restart_rect = restart_surf.get_rect()
-        restart_rect.topleft = (self.window_w - 550, 480)
+        restart_rect.topleft = (self.window_w - 550, 460)
         self.display_surf.blit(restart_surf, restart_rect)
 
     def draw_fig(self, fig, pixelx=None, pixely=None):
@@ -541,6 +542,7 @@ class Tetris:
         self.draw_fig(fig, pixelx=self.window_w - 150, pixely=230)
 
     def draw_flash_line(self, line, y):
+        self.sound_flash.play()
         for x in range(self.cup_w):
             # Генерируем случайный цвет для каждого блока в строке
             flash_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
