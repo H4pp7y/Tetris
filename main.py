@@ -1,7 +1,10 @@
+import pygame
 import pygame as pg
 import random
 import time
 import sys
+
+from pygame import mixer
 from pygame.locals import *
 
 fps = 25
@@ -27,12 +30,14 @@ empty = 'o'
 class Tetris:
     def __init__(self, block, cup_h, cup_w, side_freq, down_freq, window_w, window_h, colors, lightcolors,
                  white, gray, black, brd_color, bg_color, txt_color, title_color, info_color, fig_w, fig_h, empty):
+        self.pg_init()
+
         self.block = block
         self.cup_h, self.cup_w = cup_h, cup_w
         self.side_freq, self.down_freq = side_freq, down_freq
         self.window_w, self.window_h = window_w, window_h
         self.fps = 25
-
+        self.sound = pygame.mixer.Sound("Sounds/bgMusic.mp3")
         self.last_move_down = time.time()
         self.last_side_move = time.time()
         self.last_fall = time.time()
@@ -159,9 +164,6 @@ class Tetris:
         self.pause_screen = pg.Surface((600, 500), pg.SRCALPHA)
         self.pause_screen.fill((0, 0, 255, 127))
         self.cup = self.empty_cup()
-
-        self.pg_init()
-
         self.fps_clock = pg.time.Clock()
         self.display_surf = pg.display.set_mode((self.window_w, self.window_h))
         self.basic_font = pg.font.SysFont('calibri', 20)
@@ -203,6 +205,9 @@ class Tetris:
 
     def pg_init(self):
         pg.init()
+        mixer.init()
+
+
 
     def show_pause_screen(self):
         self.display_surf.blit(self.pause_screen, (0, 0))
@@ -531,6 +536,7 @@ class Tetris:
         pg.display.set_caption('Тетрис')
         self.show_text('Тетрис')
         self.reset_game()
+        self.sound.play()
         while True:
             self.run_tetris()
             self.show_pause_screen()
