@@ -424,6 +424,19 @@ class Tetris:
         y = self.cup_h - 1
         while y >= 0:
             if self.is_completed(cup, y):
+                # Create a copy of the line to draw the flash effect
+                flash_line = list(cup[x][y] for x in range(self.cup_w))
+
+                # Flash effect: change the color for a short duration
+                for _ in range(3):
+                    self.draw_flash_line(flash_line, y)
+                    pg.display.update()
+                    pg.time.wait(100)
+                    self.game_cup(cup)
+                    pg.display.update()
+                    pg.time.wait(100)
+
+                # Remove the completed line
                 for push_down_y in range(y, 0, -1):
                     for x in range(self.cup_w):
                         cup[x][push_down_y] = cup[x][push_down_y - 1]
@@ -526,6 +539,23 @@ class Tetris:
         next_rect.topleft = (self.window_w - 150, 180)
         self.display_surf.blit(next_surf, next_rect)
         self.draw_fig(fig, pixelx=self.window_w - 150, pixely=230)
+
+    def draw_flash_line(self, line, y):
+        for x in range(self.cup_w):
+            # Генерируем случайный цвет для каждого блока в строке
+            flash_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+
+            pg.draw.rect(self.display_surf, flash_color,
+                         (self.side_margin + (x * self.block) + 1,
+                          self.top_margin + (y * self.block) + 1,
+                          self.block - 1, self.block - 1), 0, 3)
+            pg.draw.rect(self.display_surf, self.lightcolors[line[x]],
+                         (self.side_margin + (x * self.block) + 1,
+                          self.top_margin + (y * self.block) + 1,
+                          self.block - 4, self.block - 4), 0, 3)
+            pg.draw.circle(self.display_surf, flash_color,
+                           (self.side_margin + (x * self.block) + self.block / 2,
+                            self.top_margin + (y * self.block) + self.block / 2), 5)
 
     def main(self):
         self.pg_init()
