@@ -164,8 +164,8 @@ class Tetris:
 
         self.fps_clock = pg.time.Clock()
         self.display_surf = pg.display.set_mode((self.window_w, self.window_h))
-        self.basic_font = pg.font.SysFont('arial', 20)
-        self.big_font = pg.font.SysFont('verdana', 45)
+        self.basic_font = pg.font.SysFont('calibri', 20)
+        self.big_font = pg.font.SysFont('calibri', 45)
         pg.display.set_caption('Тетрис')
         self.show_text('Тетрис')
         self.block = block
@@ -187,6 +187,10 @@ class Tetris:
         self.figures = figures
         self.falling_fig = self.get_new_fig()
         self.next_fig = self.get_new_fig()
+        self.high_score = self.load_high_score()
+
+    high_score = 0
+    high_score_file = "high_score.txt"
 
     def get_new_fig(self):
         shape = random.choice(list(self.figures.keys()))
@@ -225,8 +229,10 @@ class Tetris:
         return None
 
     def stop_game(self):
+        self.save_high_score(self.high_score)  # Save high score before quitting
         pg.quit()
         sys.exit()
+
 
     def reset_game(self):
         self.falling_fig = None
@@ -237,6 +243,7 @@ class Tetris:
         self.next_fig = self.get_new_fig()
         self.paused = False
         self.display_surf.fill((30, 30, 255, 127), special_flags=pg.BLEND_RGBA_MULT)
+        self.high_score = self.load_high_score()  # Load the high score
     paused = False
 
     def run_tetris(self):
@@ -245,6 +252,7 @@ class Tetris:
                 self.falling_fig = self.next_fig
                 self.next_fig = self.get_new_fig()
                 self.last_fall = time.time()
+                self.save_high_score(self.high_score)  # Save high score
 
                 if not self.check_pos(self.cup, self.falling_fig):
                     self.cup = self.empty_cup()
@@ -256,7 +264,8 @@ class Tetris:
                     self.reset_game()
 
             self.quit_game()
-
+            if self.points > self.high_score:
+                self.high_score = self.points  # Update the high score
             for event in pg.event.get():
                 if event.type == pg.KEYUP:
                     if event.key == pg.K_SPACE:
@@ -287,6 +296,8 @@ class Tetris:
                             if not self.check_pos(self.cup, self.falling_fig, adjY=i):
                                 break
                         self.falling_fig['y'] += i - 1
+                    elif event.key == pg.K_r:  # Handle the "R" key for restart
+                        self.reset_game()
 
                 elif event.type == pg.KEYDOWN:
                     if event.key == pg.K_LEFT and self.check_pos(self.cup, self.falling_fig, adjX=-1):
@@ -433,6 +444,17 @@ class Tetris:
         pg.draw.circle(self.display_surf, self.colors[color],
                        (pixelx + self.block / 2, pixely + self.block / 2), 5)
 
+    def load_high_score(self):
+        try:
+            with open(self.high_score_file, 'r') as file:
+                return int(file.read())
+        except FileNotFoundError:
+            return 0
+
+    def save_high_score(self, high_score):
+        with open(self.high_score_file, 'w') as file:
+            file.write(str(high_score))
+
     def game_cup(self, cup):
         pg.draw.rect(self.display_surf, self.brd_color, (
             self.side_margin - 4, self.top_margin - 4, (self.cup_w * self.block) + 8,
@@ -450,25 +472,38 @@ class Tetris:
         self.display_surf.blit(title_surf, title_rect)
 
     def draw_info(self, points, level):
-        points_surf = self.basic_font.render(f'Баллы: {points}', True, self.txt_color)
+        # Use a different font for a more appealing look
+        info_font = pg.font.SysFont('arial', 20)
+
+        high_score_surf = self.basic_font.render(f'Рекорд: {self.high_score}', True, self.txt_color)
+        high_score_rect = high_score_surf.get_rect()
+        high_score_rect.topleft = (self.window_w - 550, 150)
+        self.display_surf.blit(high_score_surf, high_score_rect)
+
+        points_surf = info_font.render(f'Баллы: {points}', True, self.txt_color)
         points_rect = points_surf.get_rect()
         points_rect.topleft = (self.window_w - 550, 180)
         self.display_surf.blit(points_surf, points_rect)
 
-        level_surf = self.basic_font.render(f'Уровень: {level}', True, self.txt_color)
+        level_surf = info_font.render(f'Уровень: {level}', True, self.txt_color)
         level_rect = level_surf.get_rect()
         level_rect.topleft = (self.window_w - 550, 250)
         self.display_surf.blit(level_surf, level_rect)
 
-        pauseb_surf = self.basic_font.render('Пауза: пробел', True, self.info_color)
+        pauseb_surf = info_font.render('Пауза: пробел', True, self.info_color)
         pauseb_rect = pauseb_surf.get_rect()
         pauseb_rect.topleft = (self.window_w - 550, 420)
         self.display_surf.blit(pauseb_surf, pauseb_rect)
 
-        escb_surf = self.basic_font.render('Выход: Esc', True, self.info_color)
+        escb_surf = info_font.render('Выход: Esc', True, self.info_color)
         escb_rect = escb_surf.get_rect()
         escb_rect.topleft = (self.window_w - 550, 450)
         self.display_surf.blit(escb_surf, escb_rect)
+
+        restart_surf = info_font.render('Перезапуск: R', True, self.info_color)
+        restart_rect = restart_surf.get_rect()
+        restart_rect.topleft = (self.window_w - 550, 480)
+        self.display_surf.blit(restart_surf, restart_rect)
 
     def draw_fig(self, fig, pixelx=None, pixely=None):
         fig_to_draw = self.figures[fig['shape']][fig['rotation']]
@@ -495,6 +530,7 @@ class Tetris:
         self.big_font = pg.font.SysFont('verdana', 45)
         pg.display.set_caption('Тетрис')
         self.show_text('Тетрис')
+        self.reset_game()
         while True:
             self.run_tetris()
             self.show_pause_screen()
