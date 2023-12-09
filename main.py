@@ -8,15 +8,19 @@ import sys
 import sqlite3
 from pygame import mixer
 from pygame.locals import *
+import pygame.font
+
+
+# conn = sqlite3.connect('tetris.db')
+# cursor = conn.cursor()
+# cursor.execute('DELETE FROM scores')
+# conn.commit()
+# conn.close()
 
 fps = 25
 window_w, window_h = 600, 500
 block, cup_h, cup_w = 20, 20, 10
-# conn = sqlite3.connect('tetris.db')
-# cursor = conn.cursor()
-# cursor.execute('CREATE TABLE IF NOT EXISTS scores (id INTEGER PRIMARY KEY AUTOINCREMENT, score INTEGER)')
-# conn.commit()
-# conn.close() создание базы данных
+
 side_freq, down_freq = 0.15, 0.1  # передвижение в сторону и вниз
 
 side_margin = int((window_w - cup_w * block) / 2)
@@ -38,6 +42,7 @@ class Tetris:
                  white, gray, black, brd_color, bg_color, txt_color, title_color, info_color, fig_w, fig_h, empty,
                  figures_filename):
         self.pg_init()
+        self.high_score_saved = False  # Add this flag to track whether high score is saved
         self.conn = sqlite3.connect('tetris.db')
         self.cursor = self.conn.cursor()
         self.block = block
@@ -135,10 +140,6 @@ class Tetris:
         press_key_rect.center = (int(self.window_w / 2), int(self.window_h / 2) + 100)
         self.display_surf.blit(press_key_surf, press_key_rect)
 
-        while self.check_keys() is None:
-            pg.display.update()
-            self.fps_clock.tick()
-
     def check_keys(self):
         for event in pg.event.get():
             if event.type == KEYDOWN or event.type == KEYUP:
@@ -146,13 +147,13 @@ class Tetris:
         return None
 
     def stop_game(self):
-        self.save_high_score(self.high_score)  # Save high score before quitting
         pg.quit()
         sys.exit()
 
     def reset_game(self):
         self.falling_fig = None
         self.points = 0
+        self.high_score_saved = False  # Reset the flag for the next falling figure
         self.level, self.fall_speed = self.calc_speed(self.points)
         self.cup = self.empty_cup()
         self.falling_fig = self.get_new_fig()
@@ -169,7 +170,6 @@ class Tetris:
                 self.falling_fig = self.next_fig
                 self.next_fig = self.get_new_fig()
                 self.last_fall = time.time()
-                self.save_high_score(self.high_score)  # Save high score
 
                 if not self.check_pos(self.cup, self.falling_fig):
                     self.cup = self.empty_cup()
@@ -184,6 +184,9 @@ class Tetris:
             self.quit_game()
             if self.points > self.high_score:
                 self.high_score = self.points  # Update the high score
+                if not self.high_score_saved:
+                    self.save_high_score(self.high_score)  # Save high score here
+                    self.high_score_saved = True  # Set the flag to True
             for event in pg.event.get():
                 if event.type == pg.KEYUP:
                     if event.key == pg.K_SPACE:
@@ -479,6 +482,78 @@ class Tetris:
                            (self.side_margin + (x * self.block) + self.block / 2,
                             self.top_margin + (y * self.block) + self.block / 2), 5)
 
+    def main_menu(self):
+        start_button_rect = pygame.Rect(self.window_w // 3, self.window_h // 2, 200, 50)
+        scores_button_rect = pygame.Rect(self.window_w // 3, self.window_h // 2 + 70, 200, 50)
+
+        while True:
+            self.display_surf.fill(self.bg_color)
+
+            self.draw_title()
+
+            # Draw "Start Game" button
+            pygame.draw.rect(self.display_surf, self.brd_color, start_button_rect, 5)
+            self.show_text_on_button('Start Game', start_button_rect)
+
+            # Draw "High Scores" button
+            pygame.draw.rect(self.display_surf, self.brd_color, scores_button_rect, 5)
+            self.show_text_on_button('High Scores', scores_button_rect)
+
+            pygame.display.update()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.stop_game()
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if start_button_rect.collidepoint(event.pos):
+                        self.run_tetris()
+                    elif scores_button_rect.collidepoint(event.pos):
+                        self.show_high_scores()
+
+    def show_text_on_button(self, text, button_rect):
+        font = pygame.font.SysFont('calibri', 30)
+        text_surf = font.render(text, True, self.txt_color)
+        text_rect = text_surf.get_rect(center=button_rect.center)
+        self.display_surf.blit(text_surf, text_rect)
+
+    def show_high_scores(self):
+        try:
+            self.cursor.execute('SELECT * FROM scores ORDER BY score DESC LIMIT 5')
+            high_scores = self.cursor.fetchall()
+
+            self.display_surf.fill(self.bg_color)
+            self.draw_title()
+
+            font = pygame.font.SysFont('calibri', 30)
+
+            header_surf = font.render('Top 5 High Scores', True, self.txt_color)
+            header_rect = header_surf.get_rect(center=(self.window_w // 2, 110))
+            self.display_surf.blit(header_surf, header_rect)
+
+            y_position = 150
+            for i, score_record in enumerate(high_scores, start=1):
+                player_score_surf = font.render(f'{i}. {score_record[1]}', True, self.txt_color)
+                player_score_rect = player_score_surf.get_rect(center=(self.window_w // 2, y_position))
+                self.display_surf.blit(player_score_surf, player_score_rect)
+                y_position += 40
+
+            back_button_rect = pygame.Rect(self.window_w // 3, self.window_h - 80, 200, 50)
+            pygame.draw.rect(self.display_surf, self.brd_color, back_button_rect, 5)
+            self.show_text_on_button('Back to Menu', back_button_rect)
+
+            pygame.display.update()
+
+            while True:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        self.stop_game()
+                    elif event.type == pygame.MOUSEBUTTONDOWN:
+                        if back_button_rect.collidepoint(event.pos):
+                            return  # Return to the main menu
+
+        except sqlite3.Error as e:
+            print(f"Error fetching high scores: {e}")
+
     def main(self):
         self.pg_init()
         self.fps_clock = pg.time.Clock()
@@ -490,6 +565,7 @@ class Tetris:
         self.reset_game()
         self.sound.play()
         while True:
+            self.main_menu()
             self.run_tetris()
             self.show_pause_screen()
 
