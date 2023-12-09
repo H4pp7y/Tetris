@@ -1,3 +1,5 @@
+import json
+
 import pygame
 import pygame as pg
 import random
@@ -29,7 +31,8 @@ empty = 'o'
 
 class Tetris:
     def __init__(self, block, cup_h, cup_w, side_freq, down_freq, window_w, window_h, colors, lightcolors,
-                 white, gray, black, brd_color, bg_color, txt_color, title_color, info_color, fig_w, fig_h, empty):
+                 white, gray, black, brd_color, bg_color, txt_color, title_color, info_color, fig_w, fig_h, empty,
+                 figures_filename):
         self.pg_init()
 
         self.block = block
@@ -66,101 +69,8 @@ class Tetris:
         self.fig_w, self.fig_h = 5, 5
         self.empty = 'o'
 
-        self.figures = figures = {'S': [['ooooo',
-                                         'ooooo',
-                                         'ooxxo',
-                                         'oxxoo',
-                                         'ooooo'],
-                                        ['ooooo',
-                                         'ooxoo',
-                                         'ooxxo',
-                                         'oooxo',
-                                         'ooooo']],
-                                  'Z': [['ooooo',
-                                         'ooooo',
-                                         'oxxoo',
-                                         'ooxxo',
-                                         'ooooo'],
-                                        ['ooooo',
-                                         'ooxoo',
-                                         'oxxoo',
-                                         'oxooo',
-                                         'ooooo']],
-                                  'J': [['ooooo',
-                                         'oxooo',
-                                         'oxxxo',
-                                         'ooooo',
-                                         'ooooo'],
-                                        ['ooooo',
-                                         'ooxxo',
-                                         'ooxoo',
-                                         'ooxoo',
-                                         'ooooo'],
-                                        ['ooooo',
-                                         'ooooo',
-                                         'oxxxo',
-                                         'oooxo',
-                                         'ooooo'],
-                                        ['ooooo',
-                                         'ooxoo',
-                                         'ooxoo',
-                                         'oxxoo',
-                                         'ooooo']],
-                                  'L': [['ooooo',
-                                         'oooxo',
-                                         'oxxxo',
-                                         'ooooo',
-                                         'ooooo'],
-                                        ['ooooo',
-                                         'ooxoo',
-                                         'ooxoo',
-                                         'ooxxo',
-                                         'ooooo'],
-                                        ['ooooo',
-                                         'ooooo',
-                                         'oxxxo',
-                                         'oxooo',
-                                         'ooooo'],
-                                        ['ooooo',
-                                         'oxxoo',
-                                         'ooxoo',
-                                         'ooxoo',
-                                         'ooooo']],
-                                  'I': [['ooxoo',
-                                         'ooxoo',
-                                         'ooxoo',
-                                         'ooxoo',
-                                         'ooooo'],
-                                        ['ooooo',
-                                         'ooooo',
-                                         'xxxxo',
-                                         'ooooo',
-                                         'ooooo']],
-                                  'O': [['ooooo',
-                                         'ooooo',
-                                         'oxxoo',
-                                         'oxxoo',
-                                         'ooooo']],
-                                  'T': [['ooooo',
-                                         'ooxoo',
-                                         'oxxxo',
-                                         'ooooo',
-                                         'ooooo'],
-                                        ['ooooo',
-                                         'ooxoo',
-                                         'ooxxo',
-                                         'ooxoo',
-                                         'ooooo'],
-                                        ['ooooo',
-                                         'ooooo',
-                                         'oxxxo',
-                                         'ooxoo',
-                                         'ooooo'],
-                                        ['ooooo',
-                                         'ooxoo',
-                                         'oxxoo',
-                                         'ooxoo',
-                                         'ooooo']]}
+        with open(figures_filename, 'r') as file:
+            self.figures = json.load(file)
 
         self.pause_screen = pg.Surface((600, 500), pg.SRCALPHA)
         self.pause_screen.fill((0, 0, 255, 127))
@@ -186,7 +96,6 @@ class Tetris:
         self.white, self.gray, self.black = white, gray, black
         self.brd_color, self.bg_color, self.txt_color, self.title_color, self.info_color = brd_color, bg_color, txt_color, title_color, info_color
         self.empty = empty
-        self.figures = figures
         self.falling_fig = self.get_new_fig()
         self.next_fig = self.get_new_fig()
         self.high_score = self.load_high_score()
@@ -577,5 +486,5 @@ class Tetris:
 if __name__ == '__main__':
     tetris_game = Tetris(block, cup_h, cup_w, side_freq, down_freq, window_w, window_h, colors, lightcolors,
                          white, gray, black, brd_color, bg_color, txt_color, title_color, info_color, fig_w, fig_h,
-                         empty)
+                         empty, "figures.json")
     tetris_game.main()
