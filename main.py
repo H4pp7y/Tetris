@@ -5,14 +5,17 @@ import pygame as pg
 import random
 import time
 import sys
-
+import sqlite3
 from pygame import mixer
 from pygame.locals import *
-
 fps = 25
 window_w, window_h = 600, 500
 block, cup_h, cup_w = 20, 20, 10
-
+conn = sqlite3.connect('tetris.db')
+cursor = conn.cursor()
+cursor.execute('CREATE TABLE IF NOT EXISTS scores (id INTEGER PRIMARY KEY AUTOINCREMENT, high_score INTEGER)')
+conn.commit()
+conn.close()
 side_freq, down_freq = 0.15, 0.1  # передвижение в сторону и вниз
 
 side_margin = int((window_w - cup_w * block) / 2)
@@ -34,7 +37,8 @@ class Tetris:
                  white, gray, black, brd_color, bg_color, txt_color, title_color, info_color, fig_w, fig_h, empty,
                  figures_filename):
         self.pg_init()
-
+        self.conn = sqlite3.connect('tetris.db')
+        self.cursor = self.conn.cursor()
         self.block = block
         self.cup_h, self.cup_w = cup_h, cup_w
         self.side_freq, self.down_freq = side_freq, down_freq
@@ -102,8 +106,6 @@ class Tetris:
         self.title_color = (0, 255, 127)
         self.info_color = (0, 255, 255)
         self.txt_color = (255, 255, 255)
-    high_score = 0
-    high_score_file = "high_score.txt"
 
     def get_new_fig(self):
         shape = random.choice(list(self.figures.keys()))
@@ -374,14 +376,24 @@ class Tetris:
 
     def load_high_score(self):
         try:
-            with open(self.high_score_file, 'r') as file:
-                return int(file.read())
-        except FileNotFoundError:
+            # Используйте SQL-запрос для извлечения лучшего рекорда из базы данных
+            self.cursor.execute('SELECT high_score FROM scores ORDER BY high_score DESC LIMIT 1')
+            result = self.cursor.fetchone()
+            if result:
+                return result[0]
+            else:
+                return 0
+        except sqlite3.Error as e:
+            print(f"Ошибка при загрузке лучшего рекорда: {e}")
             return 0
 
     def save_high_score(self, high_score):
-        with open(self.high_score_file, 'w') as file:
-            file.write(str(high_score))
+        try:
+            # Используйте SQL-запрос для сохранения лучшего рекорда в базе данных
+            self.cursor.execute('INSERT INTO scores (high_score) VALUES (?)', (high_score,))
+            self.conn.commit()
+        except sqlite3.Error as e:
+            print(f"Ошибка при сохранении лучшего рекорда: {e}")
 
     def game_cup(self, cup):
         pg.draw.rect(self.display_surf, self.brd_color, (
