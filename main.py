@@ -8,14 +8,15 @@ import sys
 import sqlite3
 from pygame import mixer
 from pygame.locals import *
+
 fps = 25
 window_w, window_h = 600, 500
 block, cup_h, cup_w = 20, 20, 10
-conn = sqlite3.connect('tetris.db')
-cursor = conn.cursor()
-cursor.execute('CREATE TABLE IF NOT EXISTS scores (id INTEGER PRIMARY KEY AUTOINCREMENT, high_score INTEGER)')
-conn.commit()
-conn.close()
+# conn = sqlite3.connect('tetris.db')
+# cursor = conn.cursor()
+# cursor.execute('CREATE TABLE IF NOT EXISTS scores (id INTEGER PRIMARY KEY AUTOINCREMENT, score INTEGER)')
+# conn.commit()
+# conn.close() создание базы данных
 side_freq, down_freq = 0.15, 0.1  # передвижение в сторону и вниз
 
 side_margin = int((window_w - cup_w * block) / 2)
@@ -158,7 +159,7 @@ class Tetris:
         self.next_fig = self.get_new_fig()
         self.paused = False
         self.display_surf.fill((30, 30, 255, 127), special_flags=pg.BLEND_RGBA_MULT)
-        self.high_score = self.load_high_score()  # Load the high score
+        self.high_score = self.load_high_score()
 
     paused = False
 
@@ -212,7 +213,6 @@ class Tetris:
                         for i in range(1, self.cup_h):
                             if not self.check_pos(self.cup, self.falling_fig, adjY=i):
                                 break
-                        self.falling_fig['y'] += i - 1
                     elif event.key == pg.K_r:  # Handle the "R" key for restart
                         self.reset_game()
 
@@ -376,11 +376,11 @@ class Tetris:
 
     def load_high_score(self):
         try:
-            # Используйте SQL-запрос для извлечения лучшего рекорда из базы данных
-            self.cursor.execute('SELECT high_score FROM scores ORDER BY high_score DESC LIMIT 1')
+            # Используем SQL-запрос для извлечения лучшего рекорда из базы данных
+            self.cursor.execute('SELECT MAX(score) FROM scores')
             result = self.cursor.fetchone()
-            if result:
-                return result[0]
+            if result and result[0] is not None:
+                return result[0]  # Возвращаем только лучший рекорд
             else:
                 return 0
         except sqlite3.Error as e:
@@ -389,11 +389,11 @@ class Tetris:
 
     def save_high_score(self, high_score):
         try:
-            # Используйте SQL-запрос для сохранения лучшего рекорда в базе данных
-            self.cursor.execute('INSERT INTO scores (high_score) VALUES (?)', (high_score,))
+            # Используем SQL-запрос для сохранения рекорда в базе данных
+            self.cursor.execute('INSERT INTO scores (score) VALUES (?)', (high_score,))
             self.conn.commit()
         except sqlite3.Error as e:
-            print(f"Ошибка при сохранении лучшего рекорда: {e}")
+            print(f"Ошибка при сохранении рекорда: {e}")
 
     def game_cup(self, cup):
         pg.draw.rect(self.display_surf, self.brd_color, (
@@ -412,7 +412,6 @@ class Tetris:
         self.display_surf.blit(title_surf, title_rect)
 
     def draw_info(self, points, level):
-        # Use a different font for a more appealing look
         info_font = pg.font.SysFont('arial', 20)
 
         high_score_surf = self.basic_font.render(f'Рекорд: {self.high_score}', True, self.txt_color)
